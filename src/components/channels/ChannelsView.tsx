@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -47,6 +48,8 @@ const channels = [
 ];
 
 export function ChannelsView() {
+  const navigate = useNavigate();
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
@@ -86,7 +89,11 @@ export function ChannelsView() {
 
                   <div className="flex items-center gap-4">
                     <Switch checked={channel.connected} />
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate(`/channels/${channel.id}`)}
+                    >
                       <Settings2 className="h-4 w-4 mr-1.5" />
                       Configure
                     </Button>
