@@ -115,18 +115,33 @@ export function ConversationDetail({ conversation }: ConversationDetailProps) {
               </div>
               <span className="text-sm font-medium gradient-text">AI Suggested Reply</span>
             </div>
-            <p className="text-sm text-foreground leading-relaxed mb-4">{aiSuggestion}</p>
+            <p 
+              className="text-sm text-foreground leading-relaxed mb-4 cursor-pointer hover:bg-muted/50 rounded-md p-2 -mx-2 transition-colors"
+              onClick={handleUseSuggestion}
+              title="Click to use this reply"
+            >
+              {aiSuggestion}
+            </p>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="ai" onClick={handleUseSuggestion}>
-                <Sparkles className="h-3.5 w-3.5" />
+                <Check className="h-3.5 w-3.5 mr-1.5" />
                 Use this reply
               </Button>
               <Button size="sm" variant="outline" onClick={handleCopySuggestion}>
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 mr-1.5" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5 mr-1.5" />
+                    Copy
+                  </>
+                )}
               </Button>
               <Button size="sm" variant="ghost">
-                <RefreshCw className="h-3.5 w-3.5" />
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                 Regenerate
               </Button>
             </div>
@@ -136,22 +151,27 @@ export function ConversationDetail({ conversation }: ConversationDetailProps) {
 
       {/* Composer */}
       <div className="border-t border-border p-4">
-        <div className="relative">
+        <div className="flex gap-3">
           <Textarea
-            placeholder="Type your reply..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="min-h-[100px] resize-none pr-24 bg-card"
+            placeholder="Type your reply..."
+            className="min-h-[80px] resize-none"
           />
-          <div className="absolute bottom-3 right-3 flex items-center gap-2">
-            <Button size="sm" variant="ghost" className="h-8">
-              <Sparkles className="h-4 w-4 text-primary" />
-            </Button>
-            <Button size="sm" disabled={!message.trim()}>
-              <Send className="h-4 w-4" />
-              Send
+          <Button size="icon" className="h-10 w-10 self-end">
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="text-muted-foreground">
+              <Sparkles className="h-4 w-4 mr-1.5" />
+              AI Assist
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Press Enter to send, Shift+Enter for new line
+          </p>
         </div>
       </div>
     </div>
@@ -165,34 +185,48 @@ interface MessageBubbleProps {
 
 function MessageBubble({ message, customerName }: MessageBubbleProps) {
   const isAgent = message.sender === 'agent';
-  
+
   return (
     <div className={cn('flex gap-3', isAgent && 'flex-row-reverse')}>
       <Avatar className="h-8 w-8 flex-shrink-0">
         {isAgent ? (
-          <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" />
+          <>
+            <AvatarImage src="/placeholder.svg" alt="Agent" />
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+              SC
+            </AvatarFallback>
+          </>
         ) : (
-          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${customerName}`} />
+          <>
+            <AvatarImage src="/placeholder.svg" alt={customerName} />
+            <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+              {customerName
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()}
+            </AvatarFallback>
+          </>
         )}
-        <AvatarFallback className="text-xs">
-          {isAgent ? 'SC' : customerName[0]}
-        </AvatarFallback>
       </Avatar>
-      
-      <div className={cn('max-w-[70%]', isAgent && 'text-right')}>
-        <div
+
+      <div
+        className={cn(
+          'max-w-[70%] rounded-2xl px-4 py-2.5',
+          isAgent
+            ? 'bg-primary text-primary-foreground rounded-tr-md'
+            : 'bg-muted text-foreground rounded-tl-md'
+        )}
+      >
+        <p className="text-sm leading-relaxed">{message.content}</p>
+        <p
           className={cn(
-            'rounded-2xl px-4 py-2.5 text-sm',
-            isAgent
-              ? 'bg-primary text-primary-foreground rounded-tr-md'
-              : 'bg-muted text-foreground rounded-tl-md'
+            'text-xs mt-1.5',
+            isAgent ? 'text-primary-foreground/70' : 'text-muted-foreground'
           )}
         >
-          {message.content}
-        </div>
-        <span className="text-xs text-muted-foreground mt-1 inline-block">
           {format(message.timestamp, 'h:mm a')}
-        </span>
+        </p>
       </div>
     </div>
   );
