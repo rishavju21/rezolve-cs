@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,28 +18,28 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-export type ViewType = 'inbox' | 'knowledge' | 'analytics' | 'team' | 'channels' | 'settings';
-
-interface AppSidebarProps {
-  currentView: ViewType;
-  onViewChange: (view: ViewType) => void;
-}
-
 const navItems = [
-  { id: 'inbox', label: 'Inbox', icon: Inbox },
-  { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'team', label: 'Team', icon: Users },
-  { id: 'channels', label: 'Channels', icon: Link2 },
+  { id: 'inbox', path: '/inbox', label: 'Inbox', icon: Inbox },
+  { id: 'knowledge', path: '/knowledge', label: 'Knowledge Base', icon: BookOpen },
+  { id: 'analytics', path: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'team', path: '/team', label: 'Team', icon: Users },
+  { id: 'channels', path: '/channels', label: 'Channels', icon: Link2 },
 ] as const;
 
 const bottomItems = [
-  { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'help', label: 'Help & Support', icon: HelpCircle },
+  { id: 'settings', path: '/settings', label: 'Settings', icon: Settings },
+  { id: 'help', path: '#', label: 'Help & Support', icon: HelpCircle },
 ] as const;
 
-export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
+export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isActive = (path: string) => {
+    if (path === '/inbox' && location.pathname === '/') return true;
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <div
@@ -71,17 +72,17 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
       <nav className="flex-1 p-3 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = currentView === item.id;
+          const active = isActive(item.path);
 
           return (
             <Button
               key={item.id}
-              variant={isActive ? 'sidebar-active' : 'sidebar'}
+              variant={active ? 'sidebar-active' : 'sidebar'}
               className={cn(
                 'w-full',
                 collapsed ? 'justify-center px-2' : 'justify-start'
               )}
-              onClick={() => onViewChange(item.id as ViewType)}
+              onClick={() => navigate(item.path)}
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
               {!collapsed && <span>{item.label}</span>}
@@ -103,7 +104,7 @@ export function AppSidebar({ currentView, onViewChange }: AppSidebarProps) {
                 'w-full',
                 collapsed ? 'justify-center px-2' : 'justify-start'
               )}
-              onClick={() => item.id === 'settings' && onViewChange('settings')}
+              onClick={() => item.path !== '#' && navigate(item.path)}
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
               {!collapsed && <span>{item.label}</span>}
