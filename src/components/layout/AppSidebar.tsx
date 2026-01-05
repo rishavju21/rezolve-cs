@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { currentUser } from '@/data/mockData';
+import { useToast } from '@/hooks/use-toast';
 import {
   Inbox,
   BookOpen,
@@ -35,10 +36,29 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const isActive = (path: string) => {
     if (path === '/inbox' && location.pathname === '/') return true;
     return location.pathname.startsWith(path);
+  };
+
+  const handleLogout = () => {
+    // Clear any stored session data
+    localStorage.removeItem('user');
+    localStorage.removeItem('session');
+    
+    toast({
+      title: 'Logged out',
+      description: 'You have been successfully logged out.',
+    });
+    
+    // Redirect to auth page
+    navigate('/auth');
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
   };
 
   return (
@@ -117,18 +137,28 @@ export function AppSidebar() {
       <div className="p-3 border-t border-sidebar-border">
         <div
           className={cn(
-            'flex items-center gap-3 rounded-lg p-2 hover:bg-sidebar-accent transition-colors cursor-pointer',
+            'flex items-center gap-3 rounded-lg p-2 hover:bg-sidebar-accent transition-colors',
             collapsed && 'justify-center'
           )}
         >
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-            <AvatarFallback className="text-xs bg-sidebar-primary text-sidebar-primary-foreground">
-              SC
-            </AvatarFallback>
-          </Avatar>
+          <div 
+            className="cursor-pointer"
+            onClick={handleProfileClick}
+            title="View Profile"
+          >
+            <Avatar className="h-8 w-8 ring-2 ring-transparent hover:ring-primary/50 transition-all">
+              <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+              <AvatarFallback className="text-xs bg-sidebar-primary text-sidebar-primary-foreground">
+                SC
+              </AvatarFallback>
+            </Avatar>
+          </div>
           {!collapsed && (
-            <div className="flex-1 min-w-0">
+            <div 
+              className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={handleProfileClick}
+              title="View Profile"
+            >
               <p className="text-sm font-medium text-sidebar-foreground truncate">
                 {currentUser.name}
               </p>
@@ -138,7 +168,13 @@ export function AppSidebar() {
             </div>
           )}
           {!collapsed && (
-            <Button variant="ghost" size="icon-sm" className="text-sidebar-foreground/60">
+            <Button 
+              variant="ghost" 
+              size="icon-sm" 
+              className="text-sidebar-foreground/60 hover:text-destructive hover:bg-destructive/10"
+              onClick={handleLogout}
+              title="Logout"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           )}

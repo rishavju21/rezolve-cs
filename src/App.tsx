@@ -12,15 +12,11 @@ import { ChannelsView } from "./components/channels/ChannelsView";
 import ChannelConfig from "./pages/ChannelConfig";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
-const SettingsView = () => (
-  <div className="flex items-center justify-center h-full">
-    <p className="text-muted-foreground">Settings view coming soon...</p>
-  </div>
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,7 +37,8 @@ const App = () => (
             <Route path="/team" element={<TeamView />} />
             <Route path="/channels" element={<ChannelsView />} />
             <Route path="/channels/:channelId" element={<ChannelConfig />} />
-            <Route path="/settings" element={<SettingsView />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

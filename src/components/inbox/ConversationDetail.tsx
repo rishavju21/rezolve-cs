@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Conversation, Message } from '@/types';
 import { ChannelBadge, StatusBadge } from '@/components/badges/Badges';
 import { aiSuggestions } from '@/data/mockData';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Send, 
   Sparkles, 
@@ -26,6 +27,8 @@ export function ConversationDetail({ conversation }: ConversationDetailProps) {
   const [message, setMessage] = useState('');
   const [showAiSuggestion, setShowAiSuggestion] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const { toast } = useToast();
 
   if (!conversation) {
     return (
@@ -49,6 +52,10 @@ export function ConversationDetail({ conversation }: ConversationDetailProps) {
     if (aiSuggestion) {
       setMessage(aiSuggestion);
       setShowAiSuggestion(false);
+      toast({
+        title: 'Reply added',
+        description: 'AI suggestion has been added to your message.',
+      });
     }
   };
 
@@ -56,8 +63,28 @@ export function ConversationDetail({ conversation }: ConversationDetailProps) {
     if (aiSuggestion) {
       navigator.clipboard.writeText(aiSuggestion);
       setCopied(true);
+      toast({
+        title: 'Copied to clipboard',
+        description: 'AI suggestion has been copied.',
+      });
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleRegenerate = () => {
+    setIsRegenerating(true);
+    toast({
+      title: 'Regenerating...',
+      description: 'Creating a new AI suggestion.',
+    });
+    // Simulate regeneration
+    setTimeout(() => {
+      setIsRegenerating(false);
+      toast({
+        title: 'New suggestion ready',
+        description: 'AI has generated a new reply suggestion.',
+      });
+    }, 1500);
   };
 
   const initials = conversation.customer.name
@@ -140,9 +167,14 @@ export function ConversationDetail({ conversation }: ConversationDetailProps) {
                   </>
                 )}
               </Button>
-              <Button size="sm" variant="ghost">
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                Regenerate
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={handleRegenerate}
+                disabled={isRegenerating}
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5", isRegenerating && "animate-spin")} />
+                {isRegenerating ? 'Regenerating...' : 'Regenerate'}
               </Button>
             </div>
           </div>
