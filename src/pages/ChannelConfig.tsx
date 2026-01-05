@@ -107,7 +107,7 @@ export default function ChannelConfig() {
   const Icon = config.icon;
 
   return (
-    <div className="min-h-screen bg-background overflow-y-auto">
+    <div className="min-h-full bg-background">
       <div className="max-w-3xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
