@@ -2,16 +2,27 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { knowledgeBase } from '@/data/mockData';
+import { knowledgeBase as initialKnowledgeBase } from '@/data/mockData';
 import { Search, Plus, FileText, FolderOpen, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { KnowledgeBaseArticle } from '@/types';
 
 export function KnowledgeBaseView() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [articles, setArticles] = useState<KnowledgeBaseArticle[]>(initialKnowledgeBase);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newArticle, setNewArticle] = useState({ title: '', content: '', category: '' });
+  const { toast } = useToast();
 
-  const categories = [...new Set(knowledgeBase.map((article) => article.category))];
+  const categories = [...new Set(articles.map((article) => article.category))];
+  const existingCategories = ['Orders', 'Returns', 'Technical', 'Billing', 'General'];
 
-  const filteredArticles = knowledgeBase.filter(
+  const filteredArticles = articles.filter(
     (article) =>
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       article.content.toLowerCase().includes(searchQuery.toLowerCase())
@@ -20,7 +31,36 @@ export function KnowledgeBaseView() {
   const articlesByCategory = categories.reduce((acc, category) => {
     acc[category] = filteredArticles.filter((article) => article.category === category);
     return acc;
-  }, {} as Record<string, typeof knowledgeBase>);
+  }, {} as Record<string, typeof articles>);
+
+  const handleAddArticle = () => {
+    if (!newArticle.title.trim() || !newArticle.content.trim() || !newArticle.category) {
+      toast({
+        title: 'Missing fields',
+        description: 'Please fill in all fields before adding the article.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const article: KnowledgeBaseArticle = {
+      id: `kb${Date.now()}`,
+      title: newArticle.title.trim(),
+      content: newArticle.content.trim(),
+      category: newArticle.category,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    setArticles([article, ...articles]);
+    setNewArticle({ title: '', content: '', category: '' });
+    setIsDialogOpen(false);
+
+    toast({
+      title: 'Article added',
+      description: 'Your article has been added to the knowledge base.',
+    });
+  };
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -32,7 +72,7 @@ export function KnowledgeBaseView() {
             Manage FAQs and documentation for AI-powered responses
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Article
         </Button>
@@ -58,7 +98,7 @@ export function KnowledgeBaseView() {
                 <FileText className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{knowledgeBase.length}</p>
+                <p className="text-2xl font-bold text-foreground">{articles.length}</p>
                 <p className="text-sm text-muted-foreground">Total Articles</p>
               </div>
             </div>
@@ -85,10 +125,12 @@ export function KnowledgeBaseView() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {format(
-                    Math.max(...knowledgeBase.map((a) => a.updatedAt.getTime())),
-                    'MMM d'
-                  )}
+                  {articles.length > 0
+                    ? format(
+                        Math.max(...articles.map((a) => a.updatedAt.getTime())),
+                        'MMM d'
+                      )
+                    : 'N/A'}
                 </p>
                 <p className="text-sm text-muted-foreground">Last Updated</p>
               </div>
@@ -100,8 +142,8 @@ export function KnowledgeBaseView() {
       {/* Articles by Category */}
       <div className="space-y-8">
         {categories.map((category) => {
-          const articles = articlesByCategory[category];
-          if (articles.length === 0) return null;
+          const categoryArticles = articlesByCategory[category];
+          if (categoryArticles.length === 0) return null;
 
           return (
             <div key={category}>
@@ -109,13 +151,13 @@ export function KnowledgeBaseView() {
                 <FolderOpen className="h-5 w-5 text-primary" />
                 {category}
                 <span className="text-sm font-normal text-muted-foreground">
-                  ({articles.length})
+                  ({categoryArticles.length})
                 </span>
               </h2>
               <div className="grid gap-4">
-                {articles.map((article) => (
-                  <Card key={article.id} className="group hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
+                {categoryArticles.map((article) => (
+                  <Card key={article.id} className="group">
+                    <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">{article.title}</CardTitle>
@@ -123,12 +165,12 @@ export function KnowledgeBaseView() {
                             Updated {format(article.updatedAt, 'MMM d, yyyy')}
                           </CardDescription>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon-sm">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Edit2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon-sm">
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -145,6 +187,63 @@ export function KnowledgeBaseView() {
           );
         })}
       </div>
+
+      {/* Add Article Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Article</DialogTitle>
+            <DialogDescription>
+              Create a new knowledge base article for AI-powered responses.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                placeholder="e.g., How to reset your password"
+                value={newArticle.title}
+                onChange={(e) => setNewArticle({ ...newArticle, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select
+                value={newArticle.category}
+                onValueChange={(value) => setNewArticle({ ...newArticle, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {existingCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                placeholder="Write the article content here..."
+                className="min-h-[150px]"
+                value={newArticle.content}
+                onChange={(e) => setNewArticle({ ...newArticle, content: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddArticle}>Add Article</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
