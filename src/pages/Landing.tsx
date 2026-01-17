@@ -53,12 +53,12 @@ const Landing = () => {
               >
                 About
               </button>
-              <button 
-                onClick={() => scrollToSection('pricing')} 
+              <Link 
+                to="/pricing" 
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Pricing
-              </button>
+              </Link>
               <button 
                 onClick={() => scrollToSection('contact')} 
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

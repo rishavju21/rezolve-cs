@@ -11,6 +11,7 @@ import { TeamView } from "./components/team/TeamView";
 import { ChannelsView } from "./components/channels/ChannelsView";
 import ChannelConfig from "./pages/ChannelConfig";
 import Landing from "./pages/Landing";
+import Pricing from "./pages/Pricing";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -27,6 +28,7 @@ const App = () => (
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth" element={<Auth />} />
           
           {/* Dashboard Routes */}
