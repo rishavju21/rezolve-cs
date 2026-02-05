@@ -23,10 +23,16 @@ export function TeamView() {
             Manage your workspace members and their roles
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Invite Member
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline">
+            <Users className="h-4 w-4 mr-2" />
+            Add Members
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Invite Member
+          </Button>
+        </div>
       </div>
 
       {/* Workspace Info */}
