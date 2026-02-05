@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { teamMembers as initialTeamMembers } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@/types';
 import { 
   Plus, 
   Users,
@@ -15,7 +17,10 @@ import {
   Shield,
   Mail,
   MoreVertical,
-  UserPlus
+  UserPlus,
+  Pencil,
+  Trash2,
+  UserX
 } from 'lucide-react';
 
 // Mock available users to add (not yet in team)
@@ -34,6 +39,15 @@ export function TeamView() {
   const [selectedRole, setSelectedRole] = useState('agent');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('agent');
+
+  // Edit/Delete/Deactivate states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState('agent');
 
   const handleAddMember = () => {
     if (!selectedUserId) {
@@ -76,6 +90,59 @@ export function TeamView() {
     setInviteMemberOpen(false);
     setInviteEmail('');
     setInviteRole('agent');
+  };
+
+  const openEditDialog = (member: User) => {
+    setSelectedMember(member);
+    setEditName(member.name);
+    setEditEmail(member.email);
+    setEditRole(member.role);
+    setEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (member: User) => {
+    setSelectedMember(member);
+    setDeleteDialogOpen(true);
+  };
+
+  const openDeactivateDialog = (member: User) => {
+    setSelectedMember(member);
+    setDeactivateDialogOpen(true);
+  };
+
+  const handleEditMember = () => {
+    if (!selectedMember) return;
+    
+    if (!editName.trim() || !editEmail.trim()) {
+      toast({ title: 'Error', description: 'Name and email are required', variant: 'destructive' });
+      return;
+    }
+
+    setTeamMembers(teamMembers.map(m => 
+      m.id === selectedMember.id 
+        ? { ...m, name: editName, email: editEmail, role: editRole as 'admin' | 'agent' }
+        : m
+    ));
+    toast({ title: 'Success', description: `${editName}'s profile has been updated` });
+    setEditDialogOpen(false);
+    setSelectedMember(null);
+  };
+
+  const handleDeleteMember = () => {
+    if (!selectedMember) return;
+    
+    setTeamMembers(teamMembers.filter(m => m.id !== selectedMember.id));
+    toast({ title: 'Member Removed', description: `${selectedMember.name} has been removed from the team` });
+    setDeleteDialogOpen(false);
+    setSelectedMember(null);
+  };
+
+  const handleDeactivateMember = () => {
+    if (!selectedMember) return;
+    
+    toast({ title: 'Member Deactivated', description: `${selectedMember.name}'s account has been deactivated` });
+    setDeactivateDialogOpen(false);
+    setSelectedMember(null);
   };
 
   return (
@@ -268,9 +335,27 @@ export function TeamView() {
                   <Button variant="ghost" size="icon-sm">
                     <Mail className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon-sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon-sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-background border border-border">
+                      <DropdownMenuItem onClick={() => openEditDialog(member)} className="cursor-pointer">
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openDeactivateDialog(member)} className="cursor-pointer">
+                        <UserX className="h-4 w-4 mr-2" />
+                        Deactivate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openDeleteDialog(member)} className="cursor-pointer text-destructive focus:text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
@@ -294,6 +379,92 @@ export function TeamView() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Member Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+            <DialogDescription>
+              Update member details and role.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input 
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input 
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="agent">Agent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditMember}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Member Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Team Member</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove {selectedMember?.name} from the team? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteMember}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Member
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate Member Dialog */}
+      <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Deactivate Team Member</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate {selectedMember?.name}'s account? They will no longer be able to access the workspace.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeactivateDialogOpen(false)}>Cancel</Button>
+            <Button variant="secondary" onClick={handleDeactivateMember}>
+              <UserX className="h-4 w-4 mr-2" />
+              Deactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
