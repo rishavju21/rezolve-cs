@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { teamMembers as initialTeamMembers } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/types';
+import { Badge } from '@/components/ui/badge';
 import { 
   Plus, 
   Users,
@@ -20,7 +21,8 @@ import {
   UserPlus,
   Pencil,
   Trash2,
-  UserX
+  UserX,
+  UserCheck
 } from 'lucide-react';
 
 // Mock available users to add (not yet in team)
@@ -30,9 +32,13 @@ const availableUsers = [
   { id: 'u3', name: 'Mike Brown', email: 'mike@rezolve.io', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike' },
 ];
 
+interface TeamMember extends User {
+  isDeactivated?: boolean;
+}
+
 export function TeamView() {
   const { toast } = useToast();
-  const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(initialTeamMembers.map(m => ({ ...m, isDeactivated: false })));
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [inviteMemberOpen, setInviteMemberOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -44,7 +50,7 @@ export function TeamView() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editRole, setEditRole] = useState('agent');
@@ -92,7 +98,7 @@ export function TeamView() {
     setInviteRole('agent');
   };
 
-  const openEditDialog = (member: User) => {
+  const openEditDialog = (member: TeamMember) => {
     setSelectedMember(member);
     setEditName(member.name);
     setEditEmail(member.email);
@@ -100,12 +106,12 @@ export function TeamView() {
     setEditDialogOpen(true);
   };
 
-  const openDeleteDialog = (member: User) => {
+  const openDeleteDialog = (member: TeamMember) => {
     setSelectedMember(member);
     setDeleteDialogOpen(true);
   };
 
-  const openDeactivateDialog = (member: User) => {
+  const openDeactivateDialog = (member: TeamMember) => {
     setSelectedMember(member);
     setDeactivateDialogOpen(true);
   };
@@ -140,9 +146,23 @@ export function TeamView() {
   const handleDeactivateMember = () => {
     if (!selectedMember) return;
     
+    setTeamMembers(teamMembers.map(m => 
+      m.id === selectedMember.id 
+        ? { ...m, isDeactivated: true }
+        : m
+    ));
     toast({ title: 'Member Deactivated', description: `${selectedMember.name}'s account has been deactivated` });
     setDeactivateDialogOpen(false);
     setSelectedMember(null);
+  };
+
+  const handleActivateMember = (member: TeamMember) => {
+    setTeamMembers(teamMembers.map(m => 
+      m.id === member.id 
+        ? { ...m, isDeactivated: false }
+        : m
+    ));
+    toast({ title: 'Member Activated', description: `${member.name}'s account has been activated` });
   };
 
   return (
@@ -320,7 +340,14 @@ export function TeamView() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-foreground">{member.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">{member.name}</p>
+                      {member.isDeactivated && (
+                        <Badge variant="secondary" className="text-xs bg-destructive/10 text-destructive border-0">
+                          Deactivated
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">{member.email}</p>
                   </div>
                 </div>
@@ -346,10 +373,17 @@ export function TeamView() {
                         <Pencil className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDeactivateDialog(member)} className="cursor-pointer">
-                        <UserX className="h-4 w-4 mr-2" />
-                        Deactivate
-                      </DropdownMenuItem>
+                      {member.isDeactivated ? (
+                        <DropdownMenuItem onClick={() => handleActivateMember(member)} className="cursor-pointer">
+                          <UserCheck className="h-4 w-4 mr-2" />
+                          Activate
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => openDeactivateDialog(member)} className="cursor-pointer">
+                          <UserX className="h-4 w-4 mr-2" />
+                          Deactivate
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => openDeleteDialog(member)} className="cursor-pointer text-destructive focus:text-destructive">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
